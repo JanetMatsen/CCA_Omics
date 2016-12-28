@@ -1,3 +1,6 @@
+.idea/
+*.swo
+*.swp
 *.tsv
 
 # Byte-compiled / optimized / DLL files

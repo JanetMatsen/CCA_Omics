@@ -10,6 +10,8 @@ import pandas as pd
 class CcaAnalysis(object):
     """
     Analyze the results of sparse CCA results (run in R)
+    Agnostic to the particular analysis type.
+    Assumes u, v were previously computed in R.
     """
     def __init__(self, x, z, u, v, val_x=None, val_z=None):
         self.x = x
@@ -94,7 +96,7 @@ class ExpressionCCA(CcaAnalysis):
                  # validation data is optional; final model won't have it.
                  x_val_filepath=None, z_val_filepath=None,
                  verbose = False,
-                 path_to_R_script='../../code/sparse_CCA.R'):
+                 path_to_R_script='./sparse_CCA.R'):
 
         self.penalty_x = penalty_x
         self.penalty_z = penalty_z
@@ -149,12 +151,7 @@ class ExpressionCCA(CcaAnalysis):
         z = self.load_array(self.z_train_filepath)
         self.z = z
 
-        # Add noise per Sham's advice.  Note that this is only an ok place to
-        # put it since our data has already been normalized with standard scalar.
-        if self.noise > 0.0:
-            print('add noise:')
-            self.x_noised = np.random.normal(loc=0, scale=self.noise, size=self.x.shape)*self.noise
-            self.z_noised = np.random.normal(loc=0, scale=self.noise, size=self.z.shape)*self.noise
+        # TODO: add option to add pseudo-counts
 
         names = self.load_array(self.x_gene_filepath)
         self.gene_names = names
@@ -195,22 +192,10 @@ class ExpressionCCA(CcaAnalysis):
         stdout_file = open('stdout_CCA.txt', 'a')
         stderr_file = open('stderr_CCA.txt', 'a')
 
-        if self.noise > 0.0:
-            noisy_x_path = './noisy_x.tsv'
-            #np.savetext(noisy_x_path, self.x_noised, delimiter='\t')
-            self.x_noised.tofile(noisy_x_path, sep='\t')
-            noisy_z_path = './noisy_z.tsv'
-            #np.savetext(noisy_z_path, self.z_noised, delimiter='\t')
-            self.z_noised.tofile(noisy_z_path, sep='\t')
-            command = ['Rscript', self.path_to_R_script,
-                       noisy_x_path, noisy_z_path,
-                       u_path, v_path,
-                       str(self.penalty_x), str(self.penalty_z)]
-        else:
-            command = ['Rscript', self.path_to_R_script,
-                       self.x_train_filepath, self.z_train_filepath,
-                       u_path, v_path,
-                       str(self.penalty_x), str(self.penalty_z)]
+        command = ['Rscript', self.path_to_R_script,
+                   self.x_train_filepath, self.z_train_filepath,
+                   u_path, v_path,
+                   str(self.penalty_x), str(self.penalty_z)]
         if verbose:
             print('command: \n {}'.format(" ".join(command)))
         subprocess.check_call(command, stdout=stdout_file, stderr=stderr_file)
