@@ -95,7 +95,13 @@ class CcaAnalysis(object):
         # for counting # of nonzero components in u and v
         return sum(vector != 0)
 
+
 class CcaExpression(CcaAnalysis):
+    """
+    Wrapper for CCA that is more specific to our expression data.
+    Understands that there are gene features, which can be asked for by name
+    for plotting and such.
+    """
     def __init__(self, x, z, penalty_x, penalty_z, val_x=None, val_z=None):
         super(CcaExpression, self).__init__(x=x, z=z,
                                             penalty_x=penalty_x,

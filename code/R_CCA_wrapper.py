@@ -22,8 +22,20 @@ R_CCA = robjects.r('CCA')
 
 
 class CCA(object):
-    def __init__(self, x, z, penalty_x=0.2, penalty_z=0.2,
-                 K=1, return_orig_object=False):
+    """
+    Accepts two matrices (row samples, column features), and arguments for
+    regularization strengths.
+    """
+    def __init__(self, x, z, penalty_x=0.2, penalty_z=0.2, K=1):
+        """
+        :param x: dataframe or numpy array
+        :param z: dataframe or numpy array
+        :param penalty_x: regularization strength for x.  Zero --> sparse
+        coefficients; 1 --> minimal sparsity.
+        :param penalty_z: regularization strength for z.  Zero --> sparse
+        coefficients; 1 --> minimal sparsity.
+        :param K: number of vectors to find.  Only tested for K=1.
+        """
         self.x = self.strip_pandas_to_numpy(x)
         self.z = self.strip_pandas_to_numpy(z)
         self.check_standard_scalar(x)
@@ -56,11 +68,6 @@ class CCA(object):
 
     def run_CCA(self):
         # make R matrices for the x and z vectors.
-        # note that the CCA method requires a matrix if the standardize
-        # argument is set to False
-        #x = pandas2ri.py2ri(pd.DataFrame(self.x))
-        #z = pandas2ri.py2ri(pd.DataFrame(self.z))
-
         # The convert_to_r_matrix function can be replaced by the normal
         # pandas2ri.py2ri to convert dataframes, with a subsequent call to
         # R as.matrix function.
