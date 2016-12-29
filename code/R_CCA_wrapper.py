@@ -9,6 +9,8 @@ pandas2ri.activate()
 
 import pandas.rpy.common as com
 
+from utils import prepare_toy_data
+
 R_PMA = importr('PMA')
 R_CCA = robjects.r('CCA')
 
@@ -38,34 +40,6 @@ class CCA(object):
         v = pandas2ri.ri2py_dataframe(self.CCA.rx('v')).T.as_matrix()
         return {'u': u.reshape((u.shape[0])),
                 'v': v.reshape((v.shape[0]))}
-
-
-# DEMO
-def prepare_toy_data():
-    """
-    Pasted directly from the sklearn example:
-    http://scikit-learn.org/stable/auto_examples/cross_decomposition/plot_compare_cross_decomposition.html#sphx-glr-auto-examples-cross-decomposition-plot-compare-cross-decomposition-py
-    Note: their X, Y in Sklearn is x, z in R's sparse CCA
-    """
-    n = 500
-    # 2 latents vars:
-    l1 = np.random.normal(size=n)
-    l2 = np.random.normal(size=n)
-
-    latents = np.array([l1, l1, l2, l2]).T
-    # X, Y are 250 examples with 4 features each.
-    X = latents + np.random.normal(size=4 * n).reshape((n, 4))
-    Y = latents + np.random.normal(size=4 * n).reshape((n, 4))
-
-    X_train = X[:n / 2]
-    Y_train = Y[:n / 2]
-    X_test = X[n / 2:]
-    Y_test = Y[n / 2:]
-
-    # Python has column features and row samples
-    # R has row samples and column features.
-    #return X_train.T, Y_train.T, X_test.T, Y_test.T
-    return X_train, Y_train, X_test, Y_test
 
 
 if __name__ == '__main__':
