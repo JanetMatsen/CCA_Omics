@@ -95,6 +95,37 @@ class CcaAnalysis(object):
         # for counting # of nonzero components in u and v
         return sum(vector != 0)
 
+class CcaExpression(CcaAnalysis):
+    def __init__(self, x, z, penalty_x, penalty_z, val_x=None, val_z=None):
+        super(CcaExpression, self).__init__(x=x, z=z,
+                                            penalty_x=penalty_x,
+                                            penalty_z=penalty_z,
+                                            val_x=val_x, val_z=val_z)
+
+        # assumes the first col is the gene names
+        self.x_genes = self.x.columns
+        self.z_genes = self.z.columns
+
+    def hist_of_counts_for_feature(self, feature):
+        # can pass a feature number (int) or gene name (string)
+        if isinstance(feature, int):
+            counts = self.x.ix[:, feature]
+            title = self.x.columns[feature]
+        elif isinstance(feature, str):
+            counts = self.x[feature]
+            title = feature
+        else:
+            print('oops; expected an int or string')
+
+        fig, ax = plt.subplots(1, 1, figsize=(3.5, 2.5))
+        plt.hist(counts, bins=self.x.shape[0])
+        plt.title(title)
+        return fig
+
+    def hist_for_top_features(self, n_features):
+        # will plot histograms for the top (largest magnitude) n features
+        pass
+
 
 if __name__ == '__main__':
     # DEMO ONLY
@@ -109,5 +140,5 @@ if __name__ == '__main__':
     x = pd.read_csv('../data/m_nmm_summed_on_gene/m.tsv')
     z = pd.read_csv('../data/m_nmm_summed_on_gene/nmm.tsv')
 
-    cca_exp = CcaAnalysis(x=x, z=z, penalty_x=0.2, penalty_z=0.2)
+    cca_exp = CcaExpression(x=x, z=z, penalty_x=0.2, penalty_z=0.2)
     pprint.pprint(cca_exp.get_summary())
