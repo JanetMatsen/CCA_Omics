@@ -18,13 +18,25 @@ R_CCA = robjects.r('CCA')
 class CCA(object):
     def __init__(self, x, z, penalty_x=0.2, penalty_z=0.2,
                  K=1, return_orig_object=False):
-        self.x = x
-        self.z = z
+        self.x = self.strip_pandas_to_numpy(x)
+        self.z = self.strip_pandas_to_numpy(z)
         self.penalty_x = penalty_x
         self.penalty_z = penalty_z
         self.K = K
         # initialize
         self.CCA = self.run_CCA()
+
+    @staticmethod
+    def strip_pandas_to_numpy(thing):
+        if isinstance(thing, pd.DataFrame):
+            print("convert dataframe to naked numpy")
+            if 'Unnamed: 0' in thing.columns:
+                del thing['Unnamed: 0']
+            a = thing.as_matrix()
+            return a
+
+        else:
+            return thing
 
     def run_CCA(self, ):
         # make R objects for the x and z vectors.

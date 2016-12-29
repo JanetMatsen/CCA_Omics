@@ -106,4 +106,8 @@ if __name__ == '__main__':
     pprint.pprint(cca_demo.get_summary())
 
     # Demo with our expression CCA
-    x =
+    x = pd.read_csv('../data/m_nmm_summed_on_gene/m.tsv')
+    z = pd.read_csv('../data/m_nmm_summed_on_gene/nmm.tsv')
+
+    cca_exp = CcaAnalysis(x=x, z=z, penalty_x=0.2, penalty_z=0.2)
+    pprint.pprint(cca_exp.get_summary())
