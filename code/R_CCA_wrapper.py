@@ -8,6 +8,12 @@ from rpy2.robjects import pandas2ri
 pandas2ri.activate()
 
 import pandas.rpy.common as com
+import rpy2.robjects as ro
+
+from rpy2.robjects import pandas2ri
+pandas2ri.activate()
+import rpy2.robjects.numpy2ri
+rpy2.robjects.numpy2ri.activate()
 
 from utils import prepare_toy_data
 
@@ -38,12 +44,25 @@ class CCA(object):
         else:
             return thing
 
-    def run_CCA(self, ):
-        # make R objects for the x and z vectors.
-        x = com.convert_to_r_dataframe(pd.DataFrame(self.x))
-        z = com.convert_to_r_dataframe(pd.DataFrame(self.z))
-        # run CCA in R.
-        return R_CCA(x, z, standardize=True,
+    def run_CCA(self):
+        # make R matrices for the x and z vectors.
+        # note that the CCA method requires a matrix if the standardize
+        # argument is set to False
+        #x = pandas2ri.py2ri(pd.DataFrame(self.x))
+        #z = pandas2ri.py2ri(pd.DataFrame(self.z))
+
+        # The convert_to_r_matrix function can be replaced by the normal
+        # pandas2ri.py2ri to convert dataframes, with a subsequent call to
+        # R as.matrix function.
+        xr, xc = self.x.shape
+        zr, zc = self.z.shape
+        x_R = ro.r.matrix(self.x, nrow=xr, ncol=xc)
+        z_R = ro.r.matrix(self.z, nrow=zr, ncol=zc)
+
+        # run CCA in R.  We want standardize = False because StandardScalar
+        # will be applied in Python.  Also, R's PMA package doesn't give
+        # access to the standardization method, or the transformed matrices
+        return R_CCA(x_R, z_R, standardize=False,
                      typex="standard", typez="standard", K=1,
                      niter=1000, penaltyx=0.2, penaltyz=0.2)
 
