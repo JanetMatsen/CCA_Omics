@@ -124,8 +124,8 @@ class CcaExpression(CcaAnalysis):
     def __init__(self, x, z, penalty_x, penalty_z, val_x=None, val_z=None):
 
         # save the gene names; they will be stripped off by the CCA instance
-        self.x_genes = x.columns
-        self.z_genes = z.columns
+        self.x_genes = x.columns.to_series()
+        self.z_genes = z.columns.to_series()
         super(CcaExpression, self).__init__(x=x, z=z,
                                             penalty_x=penalty_x,
                                             penalty_z=penalty_z,
@@ -148,7 +148,8 @@ class CcaExpression(CcaAnalysis):
             counts = self.x[:, feature]
             title = self.x_genes[feature]
         elif isinstance(feature, str):
-            numpy_index = self.x_genes[self.x_genes == feature]
+            numpy_index = pd.Index(self.x_genes).get_loc(feature)
+            assert type(numpy_index) == int
             counts = self.x[numpy_index]
             title = feature
         else:
@@ -158,6 +159,13 @@ class CcaExpression(CcaAnalysis):
         plt.hist(counts, bins=self.x.shape[0])
         plt.title(title)
         return fig
+
+    def top_features(self, n_features):
+        """
+        Get the top features (max abs(weight)) according to the model fit.
+        :param n_features: number of features
+        """
+
 
     def hist_for_top_features(self, n_features):
         # will plot histograms for the top (largest magnitude) n features
