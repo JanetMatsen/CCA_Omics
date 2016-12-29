@@ -26,11 +26,21 @@ class CCA(object):
                  K=1, return_orig_object=False):
         self.x = self.strip_pandas_to_numpy(x)
         self.z = self.strip_pandas_to_numpy(z)
+        self.check_standard_scalar(x)
+        self.check_standard_scalar(z)
         self.penalty_x = penalty_x
         self.penalty_z = penalty_z
         self.K = K
         # initialize
         self.CCA = self.run_CCA()
+
+    @staticmethod
+    def check_standard_scalar(m):
+        # Make sure the matrix is zero-centered and has unit variance
+        centers = np.sum(m, axis=0)
+        var = np.var(m, axis=0)
+        assert np.max(np.abs(centers)) < 1e-5, "center is not near zero"
+        assert np.max(np.abs(var - 1)) < 1e-5, "variance is not 1"
 
     @staticmethod
     def strip_pandas_to_numpy(thing):

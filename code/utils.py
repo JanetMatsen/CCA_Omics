@@ -57,6 +57,15 @@ def prepare_toy_data():
     X_test = X[n / 2:]
     Y_test = Y[n / 2:]
 
+    # apply standard scalar to each.
+    from sklearn.preprocessing import StandardScaler
+    ss_X = StandardScaler()
+    ss_Y = StandardScaler()
+    X_train = ss_X.fit_transform(X_train)
+    Y_train = ss_Y.fit_transform(Y_train)
+    X_test = ss_X.transform(X_test)
+    Y_test = ss_Y.transform(Y_test)
+
     # Python has column features and row samples
     # R has row samples and column features.
     #return X_train.T, Y_train.T, X_test.T, Y_test.T
