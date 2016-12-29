@@ -145,10 +145,11 @@ class CcaExpression(CcaAnalysis):
     def hist_of_counts_for_feature(self, feature):
         # can pass a feature number (int) or gene name (string)
         if isinstance(feature, int):
-            counts = self.x.ix[:, feature]
-            title = self.x.columns[feature]
+            counts = self.x[:, feature]
+            title = self.x_genes[feature]
         elif isinstance(feature, str):
-            counts = self.x[feature]
+            numpy_index = self.x_genes[self.x_genes == feature]
+            counts = self.x[numpy_index]
             title = feature
         else:
             print('oops; expected an int or string')
