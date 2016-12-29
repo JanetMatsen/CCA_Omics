@@ -126,10 +126,20 @@ class CcaExpression(CcaAnalysis):
         # save the gene names; they will be stripped off by the CCA instance
         self.x_genes = x.columns.to_series()
         self.z_genes = z.columns.to_series()
+        self.x_genes.reset_index(drop=True, inplace=True)
+        self.z_genes.reset_index(drop=True, inplace=True)
+
         super(CcaExpression, self).__init__(x=x, z=z,
                                             penalty_x=penalty_x,
                                             penalty_z=penalty_z,
                                             val_x=val_x, val_z=val_z)
+
+        self.x_feature_weights = pd.DataFrame({'gene':self.x_genes,
+                                               'weight':self.u,
+                                               'abs(weight)':np.abs(self.u)})
+        self.z_feature_weights = pd.DataFrame({'gene':self.z_genes,
+                                               'weight':self.v,
+                                               'abs(weight)':np.abs(self.v)})
 
     @staticmethod
     def strip_pandas_to_numpy(thing):
@@ -160,11 +170,23 @@ class CcaExpression(CcaAnalysis):
         plt.title(title)
         return fig
 
-    def top_features(self, n_features):
+    def top_features(self, vector='x', n_features='all'):
         """
         Get the top features (max abs(weight)) according to the model fit.
         :param n_features: number of features
         """
+        if vector == 'x':
+            df = self.x_feature_weights
+        elif vector == 'z':
+            df = self.z_feature_weights
+
+        if n_features == 'all':
+            n_features = df.shape[0] # keep all the features.
+        else:
+            assert isinstance(n_features, int)
+
+        vec_sorted = df.copy().sort_values('abs(weight)', ascending=False)
+        return vec_sorted.iloc[0:n_features, :]
 
 
     def hist_for_top_features(self, n_features):
@@ -173,6 +195,7 @@ class CcaExpression(CcaAnalysis):
 
 
 if __name__ == '__main__':
+    print("warning: demo only includes CcaAnalysis, not CcaExpression")
     # DEMO ONLY
     from utils import prepare_toy_data
     X_train, Y_train, X_test, Y_test = prepare_toy_data()
