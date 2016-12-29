@@ -36,8 +36,8 @@ class CCA(object):
         coefficients; 1 --> minimal sparsity.
         :param K: number of vectors to find.  Only tested for K=1.
         """
-        self.x = self.strip_pandas_to_numpy(x)
-        self.z = self.strip_pandas_to_numpy(z)
+        self.x = x
+        self.z = z
         self.check_standard_scalar(x)
         self.check_standard_scalar(z)
         self.penalty_x = penalty_x
@@ -52,19 +52,7 @@ class CCA(object):
         centers = np.sum(m, axis=0)
         var = np.var(m, axis=0)
         assert np.max(np.abs(centers)) < 1e-5, "center is not near zero"
-        assert np.max(np.abs(var - 1)) < 1e-5, "variance is not 1"
-
-    @staticmethod
-    def strip_pandas_to_numpy(thing):
-        if isinstance(thing, pd.DataFrame):
-            print("convert dataframe to naked numpy")
-            if 'Unnamed: 0' in thing.columns:
-                del thing['Unnamed: 0']
-            a = thing.as_matrix()
-            return a
-
-        else:
-            return thing
+        assert np.max(np.abs(var) - 1) < 1e-5, "variance is not 1"
 
     def run_CCA(self):
         # make R matrices for the x and z vectors.

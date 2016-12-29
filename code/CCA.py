@@ -1,12 +1,10 @@
 
 import matplotlib.pylab as plt
 import numpy as np
-import pprint
-import os
-import re
-import subprocess
-
 import pandas as pd
+import pprint
+from sklearn.preprocessing import StandardScaler
+
 
 from R_CCA_wrapper import CCA
 
@@ -16,9 +14,13 @@ class CcaAnalysis(object):
     Uses the CCA function in R's PMA package.
     Python calls R directly via py2r
     """
-    def __init__(self, x, z, penalty_x, penalty_z, val_x=None, val_z=None):
+    def __init__(self, x, z, penalty_x, penalty_z, val_x=None, val_z=None,
+                 standardize_before_R=True):
         self.x = x
         self.z = z
+        if standardize_before_R:
+            self.center_and_standardize()
+
         self.penalty_x = penalty_x
         self.penalty_z = penalty_z
 
@@ -34,6 +36,23 @@ class CcaAnalysis(object):
 
         self.project()
         self.summary = None
+
+    def center_and_standardize(self):
+        """
+        Make a given fold have unit-variance and zero mean
+        :return:
+        """
+        ss_for_x = StandardScaler()
+        x_ss = ss_for_x.fit_transform(self.x)
+        self.x_orig = self.x
+        self.x = x_ss
+        self.ss_for_x = ss_for_x
+
+        ss_for_z = StandardScaler()
+        z_ss = ss_for_z.fit_transform(self.z)
+        self.z_orig = self.z
+        self.z = z_ss
+        self.ss_for_z = ss_for_z
 
     def project(self):
         self.x_projected = self.x.dot(self.u)
@@ -103,14 +122,25 @@ class CcaExpression(CcaAnalysis):
     for plotting and such.
     """
     def __init__(self, x, z, penalty_x, penalty_z, val_x=None, val_z=None):
+
+        # save the gene names; they will be stripped off by the CCA instance
+        self.x_genes = x.columns
+        self.z_genes = z.columns
         super(CcaExpression, self).__init__(x=x, z=z,
                                             penalty_x=penalty_x,
                                             penalty_z=penalty_z,
                                             val_x=val_x, val_z=val_z)
 
-        # assumes the first col is the gene names
-        self.x_genes = self.x.columns
-        self.z_genes = self.z.columns
+    @staticmethod
+    def strip_pandas_to_numpy(thing):
+        if isinstance(thing, pd.DataFrame):
+            print("convert dataframe to naked numpy")
+            if 'Unnamed: 0' in thing.columns:
+                del thing['Unnamed: 0']
+            a = thing.as_matrix()
+            return a
+        else:
+            return thing
 
     def hist_of_counts_for_feature(self, feature):
         # can pass a feature number (int) or gene name (string)
