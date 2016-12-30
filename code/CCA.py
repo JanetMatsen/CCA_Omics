@@ -20,8 +20,11 @@ class CcaAnalysis(object):
                  standardize_before_R=True):
         self.x = x
         self.z = z
+
         if standardize_before_R:
             self.center_and_standardize()
+        # record for summary
+        self.standardize_before_R = standardize_before_R
 
         self.penalty_x = penalty_x
         self.penalty_z = penalty_z
@@ -94,6 +97,7 @@ class CcaAnalysis(object):
 
     def summarise(self):
         summary = {}
+        summary['correlation (R)'] = self.CCA.extract_correlation()
         summary['train correlation'] = \
             self.correlation(self.x_projected, self.z_projected)
         if (self.val_x is not None) and (self.val_z is not None):
@@ -101,6 +105,9 @@ class CcaAnalysis(object):
                 self.correlation(self.x_val_projected, self.z_val_projected)
         summary['# nonzero u weights'] = self.num_nonzero(self.u)
         summary['# nonzero v weights'] = self.num_nonzero(self.v)
+        summary['upos'] = self.CCA.upos
+        summary['vpos'] = self.CCA.vpos
+        summary['standardize before R'] = self.standardize_before_R
 
         #summary = {k:[v] for k, v in summary.items()}
         #return pd.DataFrame(summary)
@@ -148,6 +155,9 @@ class CcaExpression(CcaAnalysis):
         self.z_feature_weights = pd.DataFrame({'gene':self.z_genes,
                                                'weight':self.v,
                                                'abs(weight)':np.abs(self.v)})
+
+        self.summarise()
+        self.summary['min frac of samples'] = min_frac_of_samples
 
     @staticmethod
     def strip_pandas_to_numpy(thing):
@@ -218,7 +228,7 @@ class CcaExpression(CcaAnalysis):
             color = '#969696'
 
         plt.hist(counts, bins=len(counts), color=color)
-        plt.title(title)
+        plt.title(title, y=1.08)
 
         return fig
 

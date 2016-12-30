@@ -25,7 +25,8 @@ class CCA(object):
     Accepts two matrices (row samples, column features), and arguments for
     regularization strengths.
     """
-    def __init__(self, x, z, penalty_x=0.2, penalty_z=0.2, K=1):
+    def __init__(self, x, z, penalty_x=0.2, penalty_z=0.2, K=1,
+                 upos=True, vpos=True):
         """
         :param x: dataframe or numpy array
         :param z: dataframe or numpy array
@@ -34,6 +35,8 @@ class CCA(object):
         :param penalty_z: regularization strength for z.  Zero --> sparse
         coefficients; 1 --> minimal sparsity.
         :param K: number of vectors to find.  Only tested for K=1.
+        :param upos: force u values (weights) to be positive (R argument)
+        :param vpos: force v values (weights) to be positive (R argument)
         """
         self.x = x
         self.z = z
@@ -43,6 +46,8 @@ class CCA(object):
         self.penalty_z = penalty_z
         self.K = K
         # initialize
+        self.upos = upos
+        self.vpos = vpos
         self.CCA = self.run_CCA()
 
     @staticmethod
@@ -66,15 +71,21 @@ class CCA(object):
         # run CCA in R.  We want standardize = False because StandardScalar
         # will be applied in Python.  Also, R's PMA package doesn't give
         # access to the standardization method, or the transformed matrices
-        return R_CCA(x_R, z_R, standardize=False,
+        cca = R_CCA(x_R, z_R, standardize=False,
                      typex="standard", typez="standard", K=1,
-                     niter=1000, penaltyx=0.2, penaltyz=0.2)
+                     niter=1000, upos=self.upos, vpos=self.vpos,
+                     penaltyx=self.penalty_x, penaltyz=self.penalty_z)
+        return cca
 
     def extract_u_v(self):
         u = pandas2ri.ri2py_dataframe(self.CCA.rx('u')).T.as_matrix()
         v = pandas2ri.ri2py_dataframe(self.CCA.rx('v')).T.as_matrix()
         return {'u': u.reshape((u.shape[0])),
                 'v': v.reshape((v.shape[0]))}
+
+    def extract_correlation(self):
+        corr_df = pandas2ri.ri2py_dataframe(self.CCA.rx('cors'))
+        return corr_df.values[0,0]
 
 
 if __name__ == '__main__':
