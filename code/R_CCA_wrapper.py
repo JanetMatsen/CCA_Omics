@@ -7,7 +7,6 @@ from rpy2.robjects.packages import importr
 from rpy2.robjects import pandas2ri
 pandas2ri.activate()
 
-import pandas.rpy.common as com
 import rpy2.robjects as ro
 
 from rpy2.robjects import pandas2ri

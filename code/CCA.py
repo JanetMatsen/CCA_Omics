@@ -1,12 +1,14 @@
 
+from functools import partial
 import matplotlib.pylab as plt
 import numpy as np
 import pandas as pd
 import pprint
 from sklearn.preprocessing import StandardScaler
 
-
 from R_CCA_wrapper import CCA
+from utils import trim_features
+
 
 class CcaAnalysis(object):
     """
@@ -121,7 +123,13 @@ class CcaExpression(CcaAnalysis):
     Understands that there are gene features, which can be asked for by name
     for plotting and such.
     """
-    def __init__(self, x, z, penalty_x, penalty_z, val_x=None, val_z=None):
+    def __init__(self, x, z, penalty_x, penalty_z, val_x=None, val_z=None,
+                 min_frac_of_samples=0.5):
+
+        # We may want to restrict to features appearing in, say, 50% of samples.
+        if min_frac_of_samples is not None:
+            x = trim_features(x, min_frac_of_samples)
+            z = trim_features(z, min_frac_of_samples)
 
         # save the gene names; they will be stripped off by the CCA instance
         self.x_genes = x.columns.to_series()
@@ -202,8 +210,16 @@ class CcaExpression(CcaAnalysis):
                                             transformed=transformed)
 
         fig, ax = plt.subplots(1, 1, figsize=(3.5, 2.5))
-        plt.hist(counts, bins=len(counts))
+        ax.axvline(x=0, color='#6B706B', linestyle=':')
+
+        if transformed:
+            color = '#78c679'
+        else:
+            color = '#969696'
+
+        plt.hist(counts, bins=len(counts), color=color)
         plt.title(title)
+
         return fig
 
     def hist_of_raw_and_transformed_counts_for_feature(self, feature, vector):
@@ -214,10 +230,14 @@ class CcaExpression(CcaAnalysis):
 
         fig, axs = plt.subplots(2, 1, figsize=(3.5, 4))
         ax0 = axs[0]
+        ax0.axvline(x=0, color='#6B706B', linestyle=':')
+
         ax1 = axs[1]
+        ax1.axvline(x=0, color='#6B706B', linestyle=':')
 
         ax0.hist(raw, bins=len(raw), color='#969696')
         ax0.set_title('raw feature values', fontsize=10)
+
         ax1.hist(trans, bins=len(trans), color='#78c679')
         ax1.set_title('normalized', fontsize=10)
         assert raw_title == trans_title
@@ -250,9 +270,17 @@ class CcaExpression(CcaAnalysis):
     def hist_for_top_features(self, vector, transformed, n_features=3):
         top_features = self.top_features(vector=vector, n_features=n_features,
                                          zeros=False)
+        if transformed == 'both':
+            plot_fun = self.hist_of_raw_and_transformed_counts_for_feature
+        elif transformed:
+            plot_fun = partial(self.hist_of_counts_for_feature,
+                               transformed=True)
+        elif not transformed:
+            plot_fun = partial(self.hist_of_counts_for_feature,
+                               transformed=False)
+
         for gene_name in top_features['gene']:
-            self.hist_of_counts_for_feature(feature=gene_name, vector=vector,
-                                            transformed=transformed)
+            plot_fun(feature=gene_name, vector=vector)
 
     def hist_of_weights_for_top_features(self, n_features='all'):
         x_features = self.top_features(vector='x', n_features=n_features)

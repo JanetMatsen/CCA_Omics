@@ -36,6 +36,18 @@ def aggregate_df(df, collapse_by, colnorm=False):
         agg_df = agg_df/agg_df.sum(axis=0)
     return agg_df
 
+def trim_features(df, min_sample_frac):
+    print('eliminate features that appear in less than {0:.0f}% of '
+          'samples'.format(min_sample_frac*100))
+
+    # slick way of counting nonzero elements in each column:
+    counts = df.astype(bool).sum(axis=0) # Pandas series
+    # Get list of features with more than min_sample_frac of nonzero values
+    criteria = counts > min_sample_frac * df.shape[0] # Pandas series
+    trimmed_df = df[criteria.index[criteria]] # http://stackoverflow.com/questions/29281815/pandas-select-dataframe-columns-using-boolean
+    print('trimmed from {} columns to {} columns'.format(df.shape[1], trimmed_df.shape[1]))
+    return trimmed_df
+
 def prepare_toy_data():
     """
     Pasted directly from the sklearn example:
