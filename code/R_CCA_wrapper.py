@@ -1,20 +1,12 @@
 import numpy as np
-import pandas as pd
 
 import rpy2.robjects as robjects
 from rpy2.robjects.packages import importr
 
 from rpy2.robjects import pandas2ri
 pandas2ri.activate()
-
-import rpy2.robjects as ro
-
-from rpy2.robjects import pandas2ri
-pandas2ri.activate()
 import rpy2.robjects.numpy2ri
 rpy2.robjects.numpy2ri.activate()
-
-from utils import prepare_toy_data
 
 R_PMA = importr('PMA')
 R_CCA = robjects.r('CCA')
@@ -65,8 +57,8 @@ class CCA(object):
         # R as.matrix function.
         xr, xc = self.x.shape
         zr, zc = self.z.shape
-        x_R = ro.r.matrix(self.x, nrow=xr, ncol=xc)
-        z_R = ro.r.matrix(self.z, nrow=zr, ncol=zc)
+        x_R = robjects.r.matrix(self.x, nrow=xr, ncol=xc)
+        z_R = robjects.r.matrix(self.z, nrow=zr, ncol=zc)
 
         # run CCA in R.  We want standardize = False because StandardScalar
         # will be applied in Python.  Also, R's PMA package doesn't give

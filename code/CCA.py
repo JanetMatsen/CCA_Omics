@@ -121,6 +121,8 @@ class CcaAnalysis(object):
         if (self.val_x is not None) and (self.val_z is not None):
             summary['validation correlation'] = \
                 self.correlation(self.x_val_projected, self.z_val_projected)
+        summary['penalty_x'] = self.penalty_x
+        summary['penalty_z'] = self.penalty_z
         summary['# nonzero u weights'] = self.num_nonzero(self.u)
         summary['# nonzero v weights'] = self.num_nonzero(self.v)
         summary['upos'] = self.CCA.upos
@@ -270,7 +272,7 @@ class CcaExpression(CcaAnalysis):
         ax0.set_title('raw feature values', fontsize=10)
 
         ax1.hist(trans, bins=len(trans), color='#78c679')
-        ax1.set_title('normalized', fontsize=10)
+        ax1.set_title('normalized ({})'.format(self.scaling), fontsize=10)
         assert raw_title == trans_title
         fig.suptitle(raw_title, y=1.08, fontsize=14)
         plt.tight_layout()
