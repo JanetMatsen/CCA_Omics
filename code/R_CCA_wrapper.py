@@ -40,8 +40,8 @@ class CCA(object):
         """
         self.x = x
         self.z = z
-        self.check_standard_scalar(x)
-        self.check_standard_scalar(z)
+        #self.check_standard_scalar(x)
+        #self.check_standard_scalar(z)
         self.penalty_x = penalty_x
         self.penalty_z = penalty_z
         self.K = K

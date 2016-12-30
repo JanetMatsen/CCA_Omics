@@ -5,6 +5,7 @@ import numpy as np
 import pandas as pd
 import pprint
 from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import MinMaxScaler
 
 from R_CCA_wrapper import CCA
 from utils import trim_features
@@ -16,15 +17,27 @@ class CcaAnalysis(object):
     Uses the CCA function in R's PMA package.
     Python calls R directly via py2r
     """
-    def __init__(self, x, z, penalty_x, penalty_z, val_x=None, val_z=None,
-                 standardize_before_R=True):
+    def __init__(self, x, z, scaling, penalty_x, penalty_z,
+                 val_x=None, val_z=None, standardize_before_R=True):
+        """
+
+        :param x:
+        :param z:
+        :param scaling:
+        :param penalty_x:
+        :param penalty_z:
+        :param val_x:
+        :param val_z:
+        :param standardize_before_R:
+        """
         self.x = x
         self.z = z
 
-        if standardize_before_R:
-            self.center_and_standardize()
-        # record for summary
-        self.standardize_before_R = standardize_before_R
+        if scaling is None:
+            self.scaling = 'none'
+        else:
+            self.scaling = scaling # for summary
+            self.scale_features()
 
         self.penalty_x = penalty_x
         self.penalty_z = penalty_z
@@ -42,18 +55,23 @@ class CcaAnalysis(object):
         self.project()
         self.summary = None
 
-    def center_and_standardize(self):
+    def scale_features(self):
         """
         Make a given fold have unit-variance and zero mean
         :return:
         """
-        ss_for_x = StandardScaler()
+        if self.scaling == 'StandardScaler':
+            scaler = StandardScaler
+        elif self.scaling == "MinMaxScaler":
+            scaler = MinMaxScaler
+
+        ss_for_x = scaler()
         x_ss = ss_for_x.fit_transform(self.x)
         self.x_orig = self.x
         self.x = x_ss
         self.ss_for_x = ss_for_x
 
-        ss_for_z = StandardScaler()
+        ss_for_z = scaler()
         z_ss = ss_for_z.fit_transform(self.z)
         self.z_orig = self.z
         self.z = z_ss
@@ -107,7 +125,7 @@ class CcaAnalysis(object):
         summary['# nonzero v weights'] = self.num_nonzero(self.v)
         summary['upos'] = self.CCA.upos
         summary['vpos'] = self.CCA.vpos
-        summary['standardize before R'] = self.standardize_before_R
+        summary['scaling'] = self.scaling
 
         #summary = {k:[v] for k, v in summary.items()}
         #return pd.DataFrame(summary)
@@ -130,7 +148,9 @@ class CcaExpression(CcaAnalysis):
     Understands that there are gene features, which can be asked for by name
     for plotting and such.
     """
-    def __init__(self, x, z, penalty_x, penalty_z, val_x=None, val_z=None,
+    def __init__(self, x, z, penalty_x, penalty_z,
+                 scaler='StandardScaler',  #'MinMaxScaler',
+                 val_x=None, val_z=None,
                  min_frac_of_samples=0.5):
 
         # We may want to restrict to features appearing in, say, 50% of samples.
@@ -145,6 +165,7 @@ class CcaExpression(CcaAnalysis):
         self.z_genes.reset_index(drop=True, inplace=True)
 
         super(CcaExpression, self).__init__(x=x, z=z,
+                                            scaling=scaler,
                                             penalty_x=penalty_x,
                                             penalty_z=penalty_z,
                                             val_x=val_x, val_z=val_z)
