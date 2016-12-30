@@ -152,25 +152,61 @@ class CcaExpression(CcaAnalysis):
         else:
             return thing
 
-    def hist_of_counts_for_feature(self, feature):
+    def feature_values(self, feature, vector, transformed=False):
+        """
+        Return the values (expression levels for each sample) for the given
+        feature (specified by name or index), and vector (x or z).
+        Can return the transformed (StandardScalar) or un-transformed values.
+        """
+        if vector == 'x' or vector == 'u':
+            if transformed:
+                print("histogram of normalized counts for x:")
+                features = getattr(self, 'x')
+            else:
+                print("histogram of counts for x:")
+                features = getattr(self, 'x_orig')
+            genes = getattr(self, 'x_genes')
+
+        elif vector == 'z' or vector == 'v':
+            if transformed:
+                print("histogram of transformed counts for z:")
+                features = getattr(self, 'z')
+            else:
+                print("histogram of counts for z:")
+                features = getattr(self, 'z_orig')
+            genes = getattr(self, 'z_genes')
+
+        # Make sure the features are numpy, not pandas.
+        # As of writing, x_orig is still Pandas.  todo: (make consistent??)
+        if not isinstance(features, np.ndarray):
+            features = features.copy().as_matrix()
+
         # can pass a feature number (int) or gene name (string)
         if isinstance(feature, int):
-            counts = self.x[:, feature]
-            title = self.x_genes[feature]
+            counts = features[:, feature]
+            title = genes[feature]
+
         elif isinstance(feature, str):
-            numpy_index = pd.Index(self.x_genes).get_loc(feature)
+            numpy_index = pd.Index(genes).get_loc(feature)
             assert type(numpy_index) == int
-            counts = self.x[numpy_index]
+            counts = features[:, numpy_index]
             title = feature
         else:
             print('oops; expected an int or string')
 
+        return counts, title
+
+    def hist_of_counts_for_feature(self, feature, vector, transformed=False):
+
+        counts, title = self.feature_values(feature, vector=vector,
+                                            transformed=transformed)
+
         fig, ax = plt.subplots(1, 1, figsize=(3.5, 2.5))
-        plt.hist(counts, bins=self.x.shape[0])
+        plt.hist(counts, bins=len(counts))
         plt.title(title)
         return fig
 
-    def top_features(self, vector='x', n_features='all'):
+    def top_features(self, vector, n_features='all', zeros=False):
         """
         Get the top features (max abs(weight)) according to the model fit.
         :param n_features: number of features
@@ -186,12 +222,38 @@ class CcaExpression(CcaAnalysis):
             assert isinstance(n_features, int)
 
         vec_sorted = df.copy().sort_values('abs(weight)', ascending=False)
+
+        if not zeros:
+            vec_sorted = vec_sorted[vec_sorted['weight'] != 0]
+
         return vec_sorted.iloc[0:n_features, :]
 
+    def hist_for_top_features(self, vector, transformed, n_features=3):
+        top_features = self.top_features(vector=vector, n_features=n_features,
+                                         zeros=False)
+        for gene_name in top_features['gene']:
+            self.hist_of_counts_for_feature(feature=gene_name, vector=vector,
+                                            transformed=transformed)
 
-    def hist_for_top_features(self, n_features):
-        # will plot histograms for the top (largest magnitude) n features
-        pass
+    def hist_of_weights_for_top_features(self, n_features='all'):
+        x_features = self.top_features(vector='x', n_features=n_features)
+        z_features = self.top_features(vector='z', n_features=n_features)
+        print('Num x features: {}.  Num z features: {}'.format(
+            x_features.shape[0], z_features.shape[0]))
+
+        fig, axs = plt.subplots(2, 1, figsize=(5, 4))
+        plt_data = {1:x_features, 2:z_features}
+        titles = {1:'x feature weights', 2:'z feature weights'}
+        colors = {1:'#b3cde3', 2:'#decbe4'}
+
+        for row, ax in enumerate(axs, start=1):
+            print(row, ax)
+            ax.hist(plt_data[row]['weight'], color=colors[row])
+            ax.set_xlabel('weight')
+            ax.set_title(titles[row])
+
+        plt.tight_layout()
+        return fig
 
 
 if __name__ == '__main__':
