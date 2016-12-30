@@ -206,6 +206,25 @@ class CcaExpression(CcaAnalysis):
         plt.title(title)
         return fig
 
+    def hist_of_raw_and_transformed_counts_for_feature(self, feature, vector):
+        raw, raw_title = self.feature_values(feature, vector=vector,
+                                             transformed=False)
+        trans, trans_title = self.feature_values(feature, vector=vector,
+                                                 transformed=True)
+
+        fig, axs = plt.subplots(2, 1, figsize=(3.5, 4))
+        ax0 = axs[0]
+        ax1 = axs[1]
+
+        ax0.hist(raw, bins=len(raw), color='#969696')
+        ax0.set_title('raw feature values', fontsize=10)
+        ax1.hist(trans, bins=len(trans), color='#78c679')
+        ax1.set_title('normalized', fontsize=10)
+        assert raw_title == trans_title
+        fig.suptitle(raw_title, y=1.08, fontsize=14)
+        plt.tight_layout()
+        return fig
+
     def top_features(self, vector, n_features='all', zeros=False):
         """
         Get the top features (max abs(weight)) according to the model fit.
