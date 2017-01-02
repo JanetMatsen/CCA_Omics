@@ -64,6 +64,8 @@ class CcaAnalysis(object):
             scaler = StandardScaler
         elif self.scaling == "MinMaxScaler":
             scaler = MinMaxScaler
+        else:
+            raise Exception
 
         ss_for_x = scaler()
         x_ss = ss_for_x.fit_transform(self.x)

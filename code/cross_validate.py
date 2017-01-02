@@ -1,3 +1,5 @@
+import itertools
+import matplotlib.pylab as plt
 import pandas as pd
 
 from sklearn.model_selection import KFold
@@ -28,6 +30,10 @@ class CrossValidateExpressionCca(object):
         self.models = dict()
         self.summary = pd.DataFrame()
         self.model_each_fold(penalty_x=1, penalty_z=1)
+
+    def run_R_permute(self):
+        # TODO.  See if my cross-val matches theirs.
+        pass
 
     def remove_unknown_and_hypotheticals(self, df):
         discard_labels = ['unknown', 'hypothetical']
@@ -65,6 +71,7 @@ class CrossValidateExpressionCca(object):
                               penalty_x=penalty_x, penalty_z=penalty_z)
             summary_row = CCA_instance.get_summary()
             summary_row['CCA obj id'] = model_id
+            summary_row['fold'] = fold_num
             # prep for concat in Pandas
             summary_df_row = \
                 pd.DataFrame({k:[v] for k, v in summary_row.items()})
@@ -74,6 +81,61 @@ class CrossValidateExpressionCca(object):
             self.models[model_id] = CCA_instance
         print(self.summary)
 
+    def model_list_of_penalty_tuples(self, tup_list):
+        for reg_tuple in tup_list:
+            penalty_x, penalty_z = reg_tuple
+            print('model for penalty_x = {}, penalty_z = {}'.format(penalty_x,
+                                                                    penalty_z))
+            self.model_each_fold(penalty_x=penalty_x, penalty_z=penalty_z)
+
+    def model_combos(self, list_to_make_combos_from):
+        penalty_x_vals = list_to_make_combos_from[0]
+        penalty_z_vals = list_to_make_combos_from[1]
+        # e.g. [0.2, 0.3], [0.2, 0.3] --> [(0.2, 0.2), (0.2, 0.3), (0.3, 0.2), (0.3, 0.3)]
+        penalty_tuples = list(itertools.product(penalty_x_vals, penalty_z_vals))
+        self.model_list_of_penalty_tuples(penalty_tuples)
+
+    def plot_cross_val(self):
+        colors = {1:'#9e9ac8', 2:'#807dba', 3:'#6a51a3', 4:'#4a1486'}
+        fig, axs = plt.subplots(2, 2, figsize=(6,5))
+        plts = {'penalty_x, train': axs[0,0],
+                'penalty_z, train': axs[1,0],
+                'penalty_x, val': axs[0,1],
+                'penalty_z, val': axs[1,1]}
+        titles = {'penalty_x, train': 'train corr, penalty_x',
+                'penalty_z, train': 'train corr, penalty_z',
+                'penalty_x, val': 'val corr, penalty_x',
+                'penalty_z, val': 'val corr, penalty_z'}
+
+        #import pdb; pdb.set_trace()
+        for p_key in plts.keys():
+            print(p_key)
+            ax = plts[p_key]
+
+            # get x variable
+            if 'x' in p_key:
+                x = 'penalty_x'
+            else:
+                x = 'penalty_z'
+
+            # get y variable
+            if 'train' in p_key:
+                y = 'train correlation'
+            else:
+                y = 'validation correlation'
+
+            # plot each fold's trend.
+            for fold, df in self.summary.groupby('fold'):
+                df.sort_values(by=x, inplace=True)
+                # plot
+                ax.plot(df[x], df[y], color=colors[fold],
+                        marker='o', label='fold {}'.format(fold))
+
+            ax.set_title(titles[p_key])
+
+        # couldn't get a legend to work.
+        plt.tight_layout()
+        return fig
 
 
 
