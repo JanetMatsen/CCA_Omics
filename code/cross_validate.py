@@ -11,18 +11,22 @@ class CrossValidateExpressionCca(object):
     Take an input file, a number of folds, and prep data and .tsv files
     to do R analysis on.
     """
-    def __init__(self, x, z, folds=4, random_state=27,
-                 discard_hypotheticals=True):
+    def __init__(self, x, z, min_frac_of_samples,
+                 upos=False, vpos=False,
+                 folds=4, random_state=27, discard_hypotheticals=True):
         self.x = x
         self.z = z
         self.folds = folds
         self.discard_hypotheticals = discard_hypotheticals
+        self.upos = upos
+        self.vpos = vpos
 
         if self.discard_hypotheticals:
             self.x = self.remove_unknown_and_hypotheticals(self.x)
             self.z = self.remove_unknown_and_hypotheticals(self.z)
 
         self.folds = dict()
+        self.min_frac_of_samples = min_frac_of_samples
         self.k_fold = KFold(n_splits=4, shuffle=True,
                             random_state=random_state)
 
@@ -66,8 +70,10 @@ class CrossValidateExpressionCca(object):
             model_id = "{}_{}_{}".format(fold_num, penalty_x, penalty_z)
             CCA_instance = CcaExpression(x=fold_data['x train'],
                               z=fold_data['z train'],
+                              min_frac_of_samples=self.min_frac_of_samples,
                               val_x=fold_data['x val'],
                               val_z=fold_data['z val'],
+                              upos=self.upos, vpos=self.vpos,
                               penalty_x=penalty_x, penalty_z=penalty_z)
             summary_row = CCA_instance.get_summary()
             summary_row['CCA obj id'] = model_id

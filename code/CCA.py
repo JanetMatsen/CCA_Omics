@@ -18,6 +18,7 @@ class CcaAnalysis(object):
     Python calls R directly via py2r
     """
     def __init__(self, x, z, scaling, penalty_x, penalty_z,
+                 upos=True, vpos=True,
                  val_x=None, val_z=None, standardize_before_R=True):
         """
 
@@ -41,10 +42,13 @@ class CcaAnalysis(object):
 
         self.penalty_x = penalty_x
         self.penalty_z = penalty_z
+        self.upos = upos
+        self.vpos = vpos
 
         # run CCA
         self.CCA = CCA(self.x, self.z,
-                       penalty_x=penalty_x, penalty_z=penalty_z)
+                       penalty_x=penalty_x, penalty_z=penalty_z,
+                       upos=upos, vpos=vpos)
         uv_dict = self.CCA.extract_u_v()
         self.u = uv_dict['u']
         self.v = uv_dict['v']
@@ -127,8 +131,8 @@ class CcaAnalysis(object):
         summary['penalty_z'] = self.penalty_z
         summary['# nonzero u weights'] = self.num_nonzero(self.u)
         summary['# nonzero v weights'] = self.num_nonzero(self.v)
-        summary['upos'] = self.CCA.upos
-        summary['vpos'] = self.CCA.vpos
+        summary['upos'] = str(self.upos)
+        summary['vpos'] = str(self.vpos)
         summary['scaling'] = self.scaling
 
         #summary = {k:[v] for k, v in summary.items()}
@@ -155,6 +159,7 @@ class CcaExpression(CcaAnalysis):
     def __init__(self, x, z, penalty_x, penalty_z,
                  scaler='StandardScaler',  #'MinMaxScaler',
                  val_x=None, val_z=None,
+                 upos=True, vpos=True,
                  min_frac_of_samples=0.5):
 
         # We may want to restrict to features appearing in, say, 50% of samples.
@@ -172,10 +177,14 @@ class CcaExpression(CcaAnalysis):
         self.x_genes.reset_index(drop=True, inplace=True)
         self.z_genes.reset_index(drop=True, inplace=True)
 
+        self.upos = upos
+        self.vpos = vpos
+
         super(CcaExpression, self).__init__(x=x, z=z,
                                             scaling=scaler,
                                             penalty_x=penalty_x,
                                             penalty_z=penalty_z,
+                                            upos=upos, vpos=vpos,
                                             val_x=val_x, val_z=val_z)
 
         self.x_feature_weights = pd.DataFrame({'gene':self.x_genes,
