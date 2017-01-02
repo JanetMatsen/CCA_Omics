@@ -36,17 +36,33 @@ def aggregate_df(df, collapse_by, colnorm=False):
         agg_df = agg_df/agg_df.sum(axis=0)
     return agg_df
 
-def trim_features(df, min_sample_frac):
+def trim_features(df, min_sample_frac, val=None):
+    """
+    trim features that appear less than n times.
+    If validation data is provided, include that data so there are more samples
+    that can count, but also a larger total expected number of samples.
+    """
+
     print('eliminate features that appear in less than {0:.0f}% of '
           'samples'.format(min_sample_frac*100))
 
     # slick way of counting nonzero elements in each column:
     counts = df.astype(bool).sum(axis=0) # Pandas series
+    if val is not None:
+       counts_val = val.astype(bool).sum(axis=0)  # Pandas series
+       counts_sum = counts.add(counts_val)
+
     # Get list of features with more than min_sample_frac of nonzero values
-    criteria = counts > min_sample_frac * df.shape[0] # Pandas series
-    trimmed_df = df[criteria.index[criteria]] # http://stackoverflow.com/questions/29281815/pandas-select-dataframe-columns-using-boolean
-    print('trimmed from {} columns to {} columns'.format(df.shape[1], trimmed_df.shape[1]))
-    return trimmed_df
+    if val is None:
+        criteria = counts > min_sample_frac * df.shape[0] # Pandas series
+        trimmed_df = df[criteria.index[criteria]] # http://stackoverflow.com/questions/29281815/pandas-select-dataframe-columns-using-boolean
+        print('trimmed from {} columns to {} columns'.format(df.shape[1], trimmed_df.shape[1]))
+        return trimmed_df
+    else:
+        criteria = counts_sum > min_sample_frac * (df.shape[0] + val.shape[0])
+        trimmed_df = df[criteria.index[criteria]]
+        trimmed_val = val[criteria.index[criteria]]
+        return trimmed_df, trimmed_val
 
 def prepare_toy_data():
     """

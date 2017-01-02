@@ -157,8 +157,12 @@ class CcaExpression(CcaAnalysis):
 
         # We may want to restrict to features appearing in, say, 50% of samples.
         if min_frac_of_samples is not None:
-            x = trim_features(x, min_frac_of_samples)
-            z = trim_features(z, min_frac_of_samples)
+            if val_x is None and val_z is None:
+                x = trim_features(x, min_frac_of_samples)
+                z = trim_features(z, min_frac_of_samples)
+            else:
+                x, val_x = trim_features(x, min_frac_of_samples, val_x)
+                z, val_z = trim_features(z, min_frac_of_samples, val_z)
 
         # save the gene names; they will be stripped off by the CCA instance
         self.x_genes = x.columns.to_series()
