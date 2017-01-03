@@ -66,6 +66,8 @@ class CcaAnalysis(object):
         """
         if self.scaling == 'StandardScaler':
             scaler = StandardScaler
+        elif self.scaling == 'StandardScaler_without_mean':
+            scaler = partial(StandardScaler, with_mean=False)
         elif self.scaling == "MinMaxScaler":
             scaler = MinMaxScaler
         else:
